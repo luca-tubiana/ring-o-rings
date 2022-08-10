@@ -1,0 +1,19 @@
+#!/bin/bash
+#PBS -l select=1:ncpus={{n_cpus}}:ompthreads=1:mpiprocs={{n_mpi}}
+##PBS -l host=hpc-g04-node01  # to select a specific machine
+#PBS -l walltime={{'%02d'%(hours)}}:{{'%02d'%(minutes)}}:00
+#PBS -q {{queue}}
+#PBS -N {{name}}
+#PBS -o {{name}}.out
+#PBS -e {{name}}.err
+#PBS -M luca.tubiana@unitn.it
+#PBS -m abe
+
+# a-b-e means send email if the job is Aborted, Begins, Ends.
+
+module load openmpi-3.0.0
+module load Intel_parallel_studio_xe2018u2
+
+cd ${PBS_O_WORKDIR}
+LMP=$HOME/usr/src/lammps20/builds/build-hpc2-icc-mpi/lmp_hpc2-icc-mpi
+mpirun -np {{n_cpus}} $LMP -in {{input}}

@@ -1,0 +1,83 @@
+#-----------------------------------------------------------------------------#
+# Reference paper:                                                            #
+# K. Kremer and G. S. Grest                                                   #
+# Dynamics of entangled linear polymer melts: A molecular-dynamics simulation #
+# J Chem Phys 92, 5057 (1990)                                                 #
+#-----------------------------------------------------------------------------#
+#---- BOUNDARY CONDITIONS and INPUT DATA ----------------------#
+units lj
+boundary     p p p
+atom_style molecular #no charge! NOTE: this command must preceed read_data.
+read_restart {{restart}}
+#----POTENTIALS AND STUFF -------------------------------------#
+mass 1 1.0 #must be defined after sim. box.
+
+#----BENDING -------------------------#
+#  E = K * (1 + cos(theta)), K>0
+angle_style cosine
+angle_coeff 1 {{bending}}
+
+#----NON-BONDED INTERACTIONS: WCA ----#
+#  E= 4*epsilon*[ (sigma/r)^12 - (sigma/r)^6]  for r<r_cut
+#  r_cut =1.12246 = 2^(1/6) is the minimum of the potential
+#
+#  pair_coeff for lj/cut, specify 4:
+#    * atom type interacting with
+#    * atom type
+#    * epsilon (energy units)
+#    * sigma (distance units)
+#
+pair_style  lj/cut 1.12246152962189
+pair_coeff  1 1 1.0 1.0
+pair_modify shift yes
+
+#----BONDED INTERACTIONS: FENE + WCA --#
+#  E= - 0.5 K R0^2 ln[ 1- (r/R0)^2]
+#     + 4epsilon[ (sigma/r)^12 - (sigma/r)^6] + epsilon
+# For style fene, specify:
+#   * bond type
+#   * K (energy/distance^2)
+#   * R0 (distance)
+#   * epsilon (energy)  (LJ component)
+#   * sigma (distance)  (LJ component)
+bond_style      fene
+bond_coeff   1     30.0     1.5     1.0       1.0
+special_bonds fene #<=== I M P O R T A N T (new command)
+#--------------------------------------------------------------#
+#---NEIGHBOUR LIST DETAILS
+neighbor 1.0 bin
+#---BALANCING -------------------------------------------------#
+comm_style tiled
+comm_modify cutoff 6
+balance     1.1 rcb
+fix         1 all balance {{n_balance}} 1.1 rcb
+#----FIXES ON SIMULATIONS -------------------------------------#
+# Details:
+# - NVE ensemble
+# - Langevin integrator Tstart Tstop 1/friction PRNG seed
+# -> sampling NVT ensemble
+# - Walls
+# - oscillating end
+# - ends fixed in x and y.
+#group ends id 1 512
+
+fix 2 all nve
+fix 3 all langevin   1.0  1.0 {{tau_damp}}     {{seed}}
+
+#----OUTPUT DATA ----------------------------------------------#
+#----Configurations
+#---- ThermodynDNAringta  (temperature, energy, pressure)
+thermo {{n_thermo}}
+thermo_style   custom   step temp epair emol #v_wiggle temp epair emol
+restart     {{restart_line}}
+dump    1 all custom {{n_cdump}} {{trajfile}} id mol type xu yu zu
+dump_modify 1 append yes sort id format line "%10d %6d %3d %12.6lf %12.6lf %12.6lf"
+
+
+#----RUN ------------------------------------------------------#
+reset_timestep 0
+timestep 0.0124
+run 100000000
+run 100000000
+run 100000000
+

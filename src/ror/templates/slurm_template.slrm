@@ -1,0 +1,20 @@
+#!/bin/bash
+#SBATCH -J {{name}}	     ## name
+#SBATCH -N 1     ## 1 node
+#SBATCH --time={{'%02d'%(hours)}}:{{'%02d'%(minutes)}}:00
+#SBATCH -e {{name}}.err
+#SBATCH -o {{name}}.out
+#--#SBATCH --qos=normal_0064
+#--#SBATCH --partition=mem_0064
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=luca.tubiana@unitn.it
+#SBATCH --account=p70901  #private queue -comment previous two lines to use
+#SBATCH --qos=p70901_0064 #private queue
+
+export SLURM_STEP_GRES=none
+
+module purge
+module load intel/18 intel-mpi/2018 intel-mkl/2018 cmake/3.9.6 hdf5/1.10.4-MPI python/3.6.4 lammps/stable.2018.12.12
+
+
+mpirun -np 16 lmp_vsc3 -in {{input}} > out
