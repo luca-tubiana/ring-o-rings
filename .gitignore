@@ -81,6 +81,9 @@ target/
 # Pycharm
 .idea
 
+# MacOs
+.DS_Store
+
 # TeX/LaTeX
 *.aux
 *.bbl
